@@ -19,21 +19,17 @@ with open(ascii_file_path, 'r') as f:
     # Step 2: Load the rest as elevation data
     data = np.loadtxt(f)
 
-# Proper masking
+# Step 3: Mask and normalize data to 0-255
 masked_data = np.ma.masked_equal(data, nodata)
+min_val = masked_data.min()
+max_val = masked_data.max()
 
-# Use percentiles to ignore outliers
-p2 = np.percentile(masked_data.compressed(), 2)
-p98 = np.percentile(masked_data.compressed(), 98)
-
-# Clip and normalize
-clipped = np.clip(masked_data, p2, p98)
-normalized = (clipped - p2) / (p98 - p2) * 255
-grayscale_data = normalized.filled(0).astype(np.uint8)  # Fill NODATA with black
+# Normalize to 0–255 for grayscale
+normalized = (masked_data - min_val) / (max_val - min_val) * 255
+grayscale_data = normalized.filled(0).astype(np.uint8)  # Fill NODATA with black (0)
 
 # Step 4: Convert to image
 image = Image.fromarray(grayscale_data, mode='L')
-image = image.transpose(Image.FLIP_TOP_BOTTOM)  # Optional: match geographic orientation
 
 # Step 5: Save the image
 image.save("elevation_image.png")
